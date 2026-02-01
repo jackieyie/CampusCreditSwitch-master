@@ -1,11 +1,11 @@
 package org.alliy.service.Impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import org.alliy.mapper.AccoutMapper;
+import org.alliy.mapper.AccountMapper;
 import org.alliy.mapper.CourseMapper;
 import org.alliy.mapper.StudentMapper;
 import org.alliy.mapper.TeacherMapper;
-import org.alliy.pojo.Accout;
+import org.alliy.pojo.Account;
 import org.alliy.pojo.Course;
 import org.alliy.pojo.Student;
 import org.alliy.pojo.Teacher;
@@ -22,7 +22,7 @@ public class StudentServiceImpl implements StudentService {
     private StudentMapper studentMapper;
 
     @Autowired
-    private AccoutMapper accoutMapper;
+    private AccountMapper accountMapper;
 
     @Autowired
     private TeacherMapper teacherMapper;
@@ -34,7 +34,7 @@ public class StudentServiceImpl implements StudentService {
         List<Student> students = studentMapper.selectList(null);
         for (Student student : students) {
             //给每个学生携带密码表中的密码信息
-            student.setPassword( accoutMapper.selectById(student.getId()).getPassword() );
+            student.setPassword( accountMapper.selectById(student.getId()).getPassword() );
         }
         return students;
     }
@@ -57,7 +57,7 @@ public class StudentServiceImpl implements StudentService {
         wrapper.like("name",name);
         List<Student> students = studentMapper.selectList(wrapper);
         for (Student student : students) {
-            student.setPassword( accoutMapper.selectById(student.getId()).getPassword() );
+            student.setPassword( accountMapper.selectById(student.getId()).getPassword() );
         }
         return students;
     }
@@ -65,10 +65,10 @@ public class StudentServiceImpl implements StudentService {
     @Override
     public boolean addByStudent(Student student) {
         studentMapper.insert(student);
-        Accout accout = new Accout();
-        accout.setId(student.getId());
-        accout.setPassword(student.getPassword());
-        accoutMapper.insert(accout);
+        Account account = new Account();
+        account.setId(student.getId());
+        account.setPassword(student.getPassword());
+        accountMapper.insert(account);
         return true;
     }
 
