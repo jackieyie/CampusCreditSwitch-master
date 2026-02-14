@@ -1,44 +1,93 @@
 <template>
-  <div>
+  <div class="credit-page-container">
+    <!-- 顶部综合学分指标卡 -->
+    <div class="summary-stats">
+      <el-row :gutter="25">
+        <el-col :span="6">
+          <div class="stat-card gold-border">
+            <div class="label">已获正式加权学分</div>
+            <!-- 使用 computed 计算通过后的加权总分 -->
+            <div class="value">{{ weightedTotalEarned.toFixed(2) }} <span class="unit">pts</span></div>
+          </div>
+        </el-col>
+        <el-col :span="6">
+          <div class="stat-card blue-border">
+            <div class="label">基础课程学分总额</div>
+            <!-- 数据库中所有修读课程的基础学分累加 -->
+            <div class="value">{{ baseTotal.toFixed(1) }} <span class="unit">pts</span></div>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+
+    <!-- 学分详细列表 -->
     <el-table
+      v-loading="loading"
       :data="tableData"
-      height="900"
       border
       stripe
-      style="width: 100%"
-      :cell-style="rowStyle"
-      :header-cell-style="headerRowStyle"
-      @selection-change="handleSelectionChange"
+      style="width: 100%; border-radius: 6px;"
+      class="academic-table"
+      :header-cell-style="{ background: '#f5f8fb', color: '#1e3a8a', fontWeight: '900', textAlign: 'center' }"
+      :cell-style="{ textAlign: 'center' }"
     >
-      <el-table-column type="index" label="序号"></el-table-column>
-      <el-table-column prop="date" label="修读日期"> </el-table-column>
-      <el-table-column prop="id" label="课程号"> </el-table-column>
-      <el-table-column prop="chineseName" label="中文名"> </el-table-column>
-      <el-table-column prop="englishName" label="英文名"> </el-table-column>
-
-      <el-table-column label="课程介绍">
+      <el-table-column type="index" label="序号" width="60"></el-table-column>
+      <el-table-column prop="id" label="课程编号" width="130"></el-table-column>
+      <el-table-column prop="chineseName" label="修读课程中文名称" min-width="160"></el-table-column>
+      
+      <!-- 课程英文名展示 -->
+      <el-table-column label="English Description" min-width="200">
+          <template slot-scope="scope">
+              <span class="en-font">{{ scope.row.englishName }}</span>
+          </template>
+      </el-table-column>
+      
+      <el-table-column label="学分值" width="90">
         <template slot-scope="scope">
-          <span @click="showDetail(scope.row)" style="text-decoration:underline;cursor: pointer;color:blue;">查看</span>
+          <span style="font-weight: 800;">{{ scope.row.credits }}</span>
         </template>
       </el-table-column>
 
-      <el-table-column prop="credits" label="所含学分"> </el-table-column>
-      <el-table-column label="结果">
+      <!-- 显示从 course 表新加的 weight 权重列 -->
+      <el-table-column label="系数权重" width="90">
         <template slot-scope="scope">
-          <el-button :type="scope.row.type" size="small" >{{scope.row.status}}</el-button>
+          <el-tag size="mini" type="info" style="font-weight:bold;">x{{ scope.row.weight || 1.0 }}</el-tag>
+        </template>
+      </el-table-column>
+
+      <!-- 认定成绩：颜色联动核心字段 sc.score -->
+      <el-table-column label="成绩得分" width="100">
+        <template slot-scope="scope">
+          <span :class="getScoreTextClass(scope.row.score)">
+            {{ scope.row.score !== null ? scope.row.score : '--' }}
+          </span>
+        </template>
+      </el-table-column>
+
+      <!-- 【自动结算】：仅通过的课程显示加权分 -->
+      <el-table-column label="认证折算分" width="110">
+        <template slot-scope="scope">
+          <span v-if="scope.row.score >= 60" style="color:#2e7d32; font-weight: 800;">
+             {{ (scope.row.credits * (scope.row.weight || 1.0)).toFixed(2) }}
+          </span>
+          <span v-else style="color:#94a3b8; font-style: italic;">未确认</span>
+        </template>
+      </el-table-column>
+
+      <!-- 🥇 【核心功能】：学分认定状态变色逻辑 -->
+      <el-table-column label="修读状态认定" width="140">
+        <template slot-scope="scope">
+          <el-tag 
+            :type="statusAttribute(scope.row.score).type" 
+            effect="dark" 
+            size="small"
+            class="weight-label"
+          >
+            {{ statusAttribute(scope.row.score).label }}
+          </el-tag>
         </template>
       </el-table-column>
     </el-table>
-    <el-dialog
-      title="详情"
-      :visible.sync="dialogVisible"
-      width="30%"
-    >
-    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {{content}}</span>
-     <span slot="footer" class="dialog-footer">
-    <el-button type="primary" @click="dialogVisible = false">确 定</el-button>
-  </span>
-    </el-dialog>
   </div>
 </template>
 
@@ -47,125 +96,95 @@ export default {
   name: "StudentCredit",
   data() {
     return {
-      content:'',
-      dialogVisible: false,
-      tableData: [
-        {
-          date: "2016-05-03",
-          id:'HBKJ10001',
-          chineseName : '计算机网络',
-          englishName : 'computer network',
-          credits:'2',
-          status:'正在修读',
-          type:'info',
-          detail: "计算机网络也称计算机通信网。关于计算机网络的最简单定义是：一些相互连接的、以共享资源为目的的、自治的计算机的集合。若按此定义，则早期的面向终端的网络都不能算是计算机网络，而只能称为联机系统（因为那时的许多终端不能算是自治的计算机）。但随着硬件价格的下降，许多终端都具有一定的智能，因而“终端”和“自治的计算机”逐渐失去了严格的界限。若用微型计算机作为终端使用，按上述定义，则早期的那种面向终端的网络也可称为计算机网络。 ",
-          
-        },
-        {
-          date: "2016-06-03",
-          id:'HBKJ10010',
-          chineseName : '操作系统',
-          englishName : 'operating system',
-          credits:'2',
-          status:'正在修读',
-          detail: "在计算机中，操作系统是其最基本也是最为重要的基础性系统软件。从计算机用户的角度来说，计算机操作系统体现为其提供的各项服务；从程序员的角度来说，其主要是指用户登录的界面或者接口；如果从设计人员的角度来说，就是指各式各样模块和单元之间的联系。事实上，全新操作系统的设计和改良的关键工作就是对体系结构的设计，经过几十年以来的发展，计算机操作系统已经由一开始的简单控制循环体发展成为较为复杂的分布式操作系统，再加上计算机用户需求的愈发多样化，计算机操作系统已经成为既复杂而又庞大的计算机软件系统之一。 ",
-          type:'info',
-        },
-        {
-          date: "2017-01-01",
-          id:'HBKJ10056',
-          chineseName : '计算机原理',
-          englishName : 'computer theory',
-          credits:'3',
-          status:'通过',
-          type:'primary'
-        },
-        {
-          date: "2017-03-11",
-          id:'HBKJ10231',
-          chineseName : 'Linux操作系统',
-          englishName : 'Linux operating system',
-          credits:'2.5',
-          status:'正在修读',
-          type:'info',
-        },
-        {
-          date: "2017-05-03",
-          id:'HBKJ10353',
-          chineseName : 'Web网页设计',
-          englishName : 'Web design',
-          credits:'1.5',
-          status:'通过',
-          type:'primary'
-        },
-        {
-          date: "2017-07-07",
-          id:'HBKJ20010',
-          chineseName : 'Java程序设计基础',
-          englishName : 'Java programming foundation',
-          credits:'3',
-          status:'未通过',
-          type:'danger',
-          detail:'',
-        },
-        {
-          date: "2017-08-03",
-          id:'HBKJ10079',
-          chineseName : 'C#程序设计基础',
-          englishName : 'C# programming foundation',
-          credits:'2.5',
-          status:'正在修读',
-          type:'info'
-        },
-        {
-          date: "2018-02-03",
-          id:'HBKJ10888',
-          chineseName : '数据结构',
-          englishName : 'data structure',
-          credits:'4',
-          status:'通过',
-          type:'primary'
-        },
-        {
-          date: "2018-05-12",
-          id:'HBKJ20310',
-          chineseName : '算法设计与分析',
-          englishName : 'algorithm design and analysis',
-          credits:'3.5',
-          status:'通过',
-          type:'primary'
-        },
-       
-      ],
+      loading: false,
+      tableData: [] // 由后端获取，由于使用了JOIN，现包含sc.score数据
     };
   },
+  computed: {
+    // 算法1：加权正式总分（公式：Σ[及格分*权重]）
+    weightedTotalEarned() {
+      return this.tableData
+        .filter(item => item.score != null && parseFloat(item.score) >= 60)
+        .reduce((sum, item) => sum + (parseFloat(item.credits || 0) * parseFloat(item.weight || 1.0)), 0);
+    },
+    // 算法2：基准课程库总学分汇总
+    baseTotal() {
+      return this.tableData
+        .reduce((sum, item) => sum + parseFloat(item.credits || 0), 0);
+    }
+  },
+  mounted() {
+    this.initCreditRecord();
+  },
   methods: {
-      showDetail(row) {
-        this.content = row.detail;
-        this.dialogVisible = true;
-      },
-    toggleSelection(rows) {
-      if (rows) {
-        rows.forEach((row) => {
-          this.$refs.multipleTable.toggleRowSelection(row);
-        });
-      } else {
-        this.$refs.multipleTable.clearSelection();
+    // 核心初始化逻辑
+    initCreditRecord() {
+      const sid = localStorage.getItem("username");
+      if (!sid) {
+          this.$message.error("无法校验您的账号，请重新登录");
+          return;
       }
+      this.loading = true;
+      this.$axios.get(`/courses/my/${sid}`).then(res => {
+        if (res.data.code === 200) {
+          this.tableData = res.data.data;
+          console.log("📊 [数据快照] 已成功获取带成绩的课程信息:", this.tableData);
+        }
+      }).catch(err => {
+        console.error("加载记录异常", err);
+      }).finally(() => {
+        this.loading = false;
+      });
     },
 
-    handleSelectionChange(val) {
-      this.multipleSelection = val;
+    /**
+     * 根据分数动态判定视觉标签
+     * 1. 没有任何分数 (NULL) ➡ 正在修读
+     * 2. 分数 >= 60 ➡ 通过
+     * 3. 分数 < 60 ➡ 失败
+     */
+    statusAttribute(score) {
+      if (score === null || score === undefined) {
+        return { label: '正在修读', type: 'info' }; 
+      }
+      return score >= 60 
+        ? { label: '已认证', type: 'success' } 
+        : { label: '成绩不通过', type: 'danger' };
     },
-    rowStyle() {
-      return "text-align:center";
-    },
-    headerRowStyle() {
-      return "text-align: center";
-    },
-  },
+
+    getScoreTextClass(score) {
+      if (score === null || score === undefined) return 'score-empty';
+      return score >= 60 ? 'score-high' : 'score-low';
+    }
+  }
 };
 </script>
 
-<style>
+<style scoped>
+.credit-page-container { padding: 40px; background-color: #ffffff; min-height: 80vh;}
+
+.summary-stats { margin-bottom: 30px; }
+.stat-card {
+  padding: 22px;
+  background: #fff;
+  border: 1px solid #e0e7f1;
+  border-radius: 8px;
+  border-left: 5px solid;
+}
+.gold-border { border-left-color: #ca8a04; }
+.blue-border { border-left-color: #1e3a8a; }
+
+.stat-card .label { font-size: 13.5px; font-weight: bold; color: #4b5563; margin-bottom: 8px; }
+.stat-card .value { font-size: 26px; font-weight: 900; color: #111827; }
+.stat-card .unit { font-size: 13px; font-weight: normal; color: #9ca3af; }
+
+.academic-table { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+
+/* 文字与标签强化 */
+.score-high { color: #15803d; font-weight: 800; font-size: 15px; }
+.score-low { color: #b91c1c; font-weight: 800; font-size: 15px; }
+.score-empty { color: #94a3b8; font-style: italic; }
+.en-font { font-family: "Helvetica", sans-serif; font-size: 13px; color: #64748b; font-style: italic; }
+
+.weight-label { width: 110px; font-weight: 800 !important; letter-spacing: 0.5px; border: none; }
 </style>

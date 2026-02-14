@@ -1,138 +1,161 @@
 <template>
   <div class="login">
       <el-row type="flex" class="row-bg" justify="center">
+        <!-- 左侧欢迎区域 -->
         <el-col :xl="6" :lg="7">
             <h2>欢迎登录学分认证系统</h2>
             <el-image :src="require('@/assets/Login.png')"></el-image>
             <p>校园学分认证管理系统</p>
         </el-col>
+
         <el-col :span="1">
             <el-divider direction="vertical"></el-divider>
         </el-col>
+
+        <!-- 右侧登录区域 -->
         <el-col :xl="6" :lg="5">
             <el-form :model="loginForm" :rules="rules" ref="loginForm" label-width="100px" class="demo-loginForm">
                 <el-form-item label="用户名" prop="username" style="width:380px;">
                     <el-input v-model="loginForm.username" placeholder="请输入学号/工号"></el-input>
                 </el-form-item>
-                 <el-form-item label="" prop="password" style="width:380px;">
-                     <label slot="label">密&nbsp;&nbsp;&nbsp; 码</label>
-                    <el-input type='password' v-model="loginForm.password" placeholder="请输入密码"></el-input>
+                 <el-form-item label="密  码" prop="password" style="width:380px;">
+                    <el-input type='password' v-model="loginForm.password" placeholder="请输入密码" @keyup.enter.native="submitForm('loginForm')"></el-input>
                 </el-form-item>
                 
-                <!-- 验证码部分：使用 Flex 布局确保左右排列 -->
-                <el-form-item label="验证码" prop="code" style="width:380px;">
-                    <div style="display: flex; align-items: center;">
-                        <el-input v-model="loginForm.code" style="width:160px;" placeholder="验证码"></el-input>
-                        <img 
-                            v-if="codeImgPath"
-                            :src="codeImgPath" 
-                            @click="getCodeImgPath"
-                            title="点击刷新验证码"
-                            style="width:110px; height:40px; margin-left:12px; cursor:pointer; border:1px solid #ddd; border-radius: 4px; display: block;"
-                        />
-                    </div>
-                </el-form-item>
-
                 <el-form-item>
                     <el-button type="primary" @click="submitForm('loginForm')" style="width: 100px;">登录</el-button>
-                    <el-button @click="resetForm('loginForm')" style="width: 100px;">重置</el-button>
+                    <el-button type="text" @click="openRegisterDialog">没有账号？立即注册</el-button>
                 </el-form-item>
             </el-form>
         </el-col>
       </el-row>
+
+      <!-- 注册悬浮弹窗 -->
+      <el-dialog title="新用户注册" :visible.sync="registerVisible" width="450px" center :close-on-click-modal="false">
+        <el-form :model="regForm" :rules="regRules" ref="regForm" label-width="100px">
+          <el-form-item label="学号/工号" prop="username">
+            <el-input v-model="regForm.username" placeholder="建议使用真实学号"></el-input>
+          </el-form-item>
+          <el-form-item label="设置密码" prop="password">
+            <el-input type="password" v-model="regForm.password" placeholder="至少6位密码"></el-input>
+          </el-form-item>
+          <el-form-item label="确认密码" prop="checkPass">
+            <el-input type="password" v-model="regForm.checkPass" placeholder="请再次输入密码"></el-input>
+          </el-form-item>
+        </el-form>
+        <span slot="footer" class="dialog-footer">
+          <el-button @click="registerVisible = false">取 消</el-button>
+          <el-button type="success" @click="submitRegister('regForm')">提交注册</el-button>
+        </span>
+      </el-dialog>
   </div>
 </template>
 
 <script>
 export default {
     name:'Login', 
-    mounted() {
-        // 初始化获取验证码
-        this.getCodeImgPath();
-    },
     data() {
       return {
+        registerVisible: false,
         loginForm: {
           username:'', 
-          password: '',
-          code:'',
-          token:''       // 存储后端返回的验证码标识
+          password: ''
         },
-        codeImgPath: null,  // 验证码图片路径
+        regForm: {
+          username: '',
+          password: '',
+          checkPass: ''
+        },
         rules: {
           username: [
             { required: true, message: '请输入用户名', trigger: 'blur' },
           ],
           password: [
             { required: true, message: '请输入密码', trigger: 'blur' },
+          ]
+        },
+        regRules: {
+          username: [
+            { required: true, message: '学号不能为空', trigger: 'blur' }
           ],
-          code: [
-            { required: true, message: '请输入验证码', trigger: 'blur' },
-            { min: 5, max: 5, message: '长度应为 5 个字符', trigger: 'blur' }
+          password: [
+            { required: true, message: '请设置密码', trigger: 'blur' },
+            { min: 6, message: '密码至少6位', trigger: 'blur' }
+          ],
+          checkPass: [
+            { required: true, message: '请再次输入密码确认', trigger: 'blur' }
           ]
         }
       };
     },
     methods: {
-        // 获取验证码方法
-        getCodeImgPath(){
-            console.log("正在请求验证码...");
-            this.$axios({
-                method:'get',
-                url: '/codepath', 
-            }).then(res=>{
-                console.log("验证码获取结果:", res.data);
-                if(res.data && res.data.data) {
-                    this.loginForm.token = res.data.data.token;
-                    this.codeImgPath = res.data.data.codeImgPath;
+        openRegisterDialog() {
+            this.registerVisible = true;
+            this.$nextTick(() => {
+                if (this.$refs.regForm) {
+                    this.$refs.regForm.resetFields();
                 }
-            }).catch(err => {
-                console.error("无法获取验证码，请检查后端服务:", err);
-            })
+            });
         },
-      submitForm(formName) {
-        this.$refs[formName].validate((valid) => {
-          if (valid) {
-                // 真实登录逻辑
-                this.$axios({
-                    method: 'post',
-                    url: '/login',
-                    data: this.loginForm
-                }).then((response) => {
-                    console.log("登录响应:", response.data);
-                    
-                    if (response.data.code === 200) {
-                        this.$message.success("登录成功");
-                        
-                        // 1. 存储 Token
-                        const jwt = response.headers['authorization'];
-                        if(jwt) {
-                            localStorage.setItem("token", jwt);
-                            this.$store.commit('SET_TOKEN', jwt);
-                        }
+        // 登录逻辑
+        submitForm(formName) {
+            this.$refs[formName].validate((valid) => {
+                if (valid) {
+                    this.$axios.post('/login', this.loginForm).then((res) => {
+                        if (res.data.code === 200) {
+                            this.$message.success("登录成功");
+                            
+                            // 1. 获取后端返回的角色 (role)
+                            const role = res.data.role;
+                            
+                            // 2. 存储 Token、角色信息 和 用户名（ID）到本地
+                            const jwt = res.headers['authorization'];
+                            if(jwt) localStorage.setItem("token", jwt);
+                            
+                            localStorage.setItem("userRole", role); 
+                            // 【关键新增】必须存入 username，供 Student.vue 等组件使用
+                            localStorage.setItem("username", this.loginForm.username);
 
-                        // 2. 身份跳转逻辑
-                        if(this.loginForm.username === 'admin') {
-                            this.$router.push('/users');
+                            // 3. 根据角色跳转
+                            if (role === 'admin') {
+                                this.$router.push('/admin/info');
+                            } else if (role === 'teacher') {
+                                this.$router.push('/teacher/info');
+                            } else {
+                                // 默认跳转到学生系统页面
+                                this.$router.push('/student/info');
+                            }
                         } else {
-                            // 默认跳转到课程页
-                            this.$router.push('/student/course');
+                            this.$message.error(res.data.msg || "用户名或密码错误");
                         }
-                    } else {
-                        this.$message.error(response.data.msg || "登录失败");
+                    }).catch(err => {
+                        this.$message.error("服务器连接异常");
+                    })
+                }
+            });
+        },
+        // 注册逻辑
+        submitRegister(formName) {
+            this.$refs[formName].validate((valid) => {
+                if (valid) {
+                    if (this.regForm.password !== this.regForm.checkPass) {
+                        this.$message.error("两次输入的密码不一致！");
+                        return;
                     }
-                }).catch(err => {
-                    this.$message.error("服务器连接失败，请检查后端是否开启");
-                    console.error(err);
-                })
-          } else {
-            return false;
-          }
-        });
-      },
-      resetForm(formName) {
-        this.$refs[formName].resetFields();
-      }
+                    this.$axios.post('/register', this.regForm).then(res => {
+                        if (res.data.code === 200) {
+                            this.$message.success("注册成功！");
+                            this.registerVisible = false;
+                            this.loginForm.username = this.regForm.username; 
+                        } else {
+                            this.$message.error(res.data.msg || "注册失败");
+                        }
+                    })
+                } else {
+                    return false;
+                }
+            });
+        }
     }
   }
 </script>
@@ -155,9 +178,5 @@ export default {
     }
     .el-divider {
         height:240px;
-    }
-    /* 这里移除了 float，改用 flex 控制 */
-    .demo-loginForm {
-        margin-top: 20px;
     }
 </style>
