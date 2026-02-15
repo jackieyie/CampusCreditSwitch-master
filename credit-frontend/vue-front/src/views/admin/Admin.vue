@@ -22,7 +22,7 @@
             <router-link to="/admin/container">
               <el-menu-item index="2">
                 <i class="el-icon-school"></i>
-                <span slot="title">总科目资源库</span>
+                <span slot="title">总科目</span>
               </el-menu-item>
             </router-link>
 
@@ -30,7 +30,7 @@
             <router-link to="/admin/courses">
               <el-menu-item index="3">
                 <i class="el-icon-set-up"></i>
-                <span slot="title">科目库精细化管理</span>
+                <span slot="title">进行中的课程</span>
               </el-menu-item>
             </router-link>
 
@@ -38,7 +38,7 @@
             <router-link to="/admin/users-mgr">
               <el-menu-item index="4">
                 <i class="el-icon-key"></i>
-                <span slot="title">系统用户鉴权中心</span>
+                <span slot="title">用户管理</span>
               </el-menu-item>
             </router-link>
             
