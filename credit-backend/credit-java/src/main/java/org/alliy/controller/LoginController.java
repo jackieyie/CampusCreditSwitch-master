@@ -2,79 +2,95 @@ package org.alliy.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.alliy.mapper.AccountMapper;
+import org.alliy.mapper.StudentMapper; // 【新增】引入 StudentMapper
 import org.alliy.pojo.Account;
+import org.alliy.pojo.Student; // 【新增】引入 Student 实体
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional; // 【建议】引入事务
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @RestController
-@CrossOrigin // 必须加，解决前端8080访问后端的跨域问题
+@CrossOrigin
 public class LoginController {
 
     @Autowired
     private AccountMapper accountMapper;
 
-    /**
-     * 1. 验证码接口：对接前端 getCodeImgPath 方法
-     */
-    @GetMapping("/codepath")
-    public Map getCode() {
-        Map<String, Object> res = new HashMap<>();
-        Map<String, Object> data = new HashMap<>();
+    @Autowired
+    private StudentMapper studentMapper; // 【新增】注入 StudentMapper
 
-        // 这里的逻辑先写死，保证前端不报错能显示
-        data.put("token", UUID.randomUUID().toString()); // 随机生成一个token
-        // 这里给一个占位图，你也可以找个真实验证码图片的URL
-        // 在 LoginController.java 里修改这一行
-        // 在 LoginController.java 里修改这一行
-        data.put(
-                "codeImgPath",
-                "https://dummyimage.com/110x44/cccccc/000000&text=CODE&rand=" + UUID.randomUUID()
-        );
-
-
-
-        res.put("code", 200);
-        res.put("data", data);
-        return res;
-    }
-
-    /**
-     * 2. 登录接口：对接前端 submitForm 方法
-     */
     @PostMapping("/login")
     public Map login(@RequestBody Map<String, String> loginForm, HttpServletResponse response) {
-        String username = loginForm.get("username"); // 前端传的是 username
+        // ... 登录逻辑保持不变 ...
+        String username = loginForm.get("username");
         String password = loginForm.get("password");
-
-        // 简单模拟验证码校验（前端要求长度为5，我们这里就不真校验了）
-
-        // 查询数据库
-        QueryWrapper<Account> wrapper = new QueryWrapper<>();
-        wrapper.eq("id", username).eq("password", password);
-        Account user = accountMapper.selectOne(wrapper);
+        Account user = accountMapper.selectOne(new QueryWrapper<Account>().eq("id", username).eq("password", password));
 
         Map<String, Object> res = new HashMap<>();
         if (user != null) {
-            // 登录成功
-            // 关键：前端 Login.vue 88行需要从 header 里拿 authorization
-            String jwtToken = "fake-jwt-token-for-" + username;
+            String jwtToken = "token-for-" + username;
             response.setHeader("authorization", jwtToken);
-            // 必须暴露这个 header，否则前端 JS 拿不到它
             response.setHeader("Access-Control-Expose-Headers", "authorization");
-
             res.put("code", 200);
             res.put("msg", "登录成功");
+            res.put("role", user.getRole());
             return res;
         } else {
-            // 登录失败
             res.put("code", 400);
             res.put("msg", "用户名或密码错误");
             return res;
         }
+    }
+
+    /**
+     * 修改后的注册方法：双表同步插入
+     */
+    @PostMapping("/register")
+    @Transactional // 【重要】开启事务，确保两张表要么都成功，要么都失败
+    public Map register(@RequestBody Map<String, String> regForm) {
+        String username = regForm.get("username");
+        String password = regForm.get("password");
+
+        Map<String, Object> res = new HashMap<>();
+        try {
+            // 1. 检查账号是否已存在
+            if (accountMapper.selectById(username) != null) {
+                res.put("code", 400);
+                res.put("msg", "该账号已存在");
+                return res;
+            }
+
+            Integer userId = Integer.parseInt(username);
+
+            // 2. 向 account 表插入数据
+            Account newAccount = new Account();
+            newAccount.setId(userId);
+            newAccount.setPassword(password);
+            newAccount.setRole("student"); // 默认注册为学生
+            accountMapper.insert(newAccount);
+
+            // 3. 【核心改进】同步向 student 表插入一条初始记录
+            Student newStudent = new Student();
+            newStudent.setId(userId);
+            newStudent.setName("新同学_" + userId); // 设置一个默认姓名，防止页面空白
+            newStudent.setGender("未设置");
+            newStudent.setAcademy("待分配学院");
+            newStudent.setMajor("待分配专业");
+            studentMapper.insert(newStudent);
+
+            res.put("code", 200);
+            res.put("msg", "注册成功，已自动创建个人档案");
+        } catch (NumberFormatException e) {
+            res.put("code", 400);
+            res.put("msg", "学号必须为纯数字");
+        } catch (Exception e) {
+            res.put("code", 500);
+            res.put("msg", "注册异常：" + e.getMessage());
+        }
+        return res;
     }
 }

@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 public class Account {
     @TableId
-    private Integer id;
-    private String password;
+    private Integer id;       // 账号（学号/工号）
+    private String password;  // 密码
+    private String role;      // 角色：student, teacher, admin
 }

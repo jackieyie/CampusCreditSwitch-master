@@ -124,7 +124,7 @@ a { text-decoration: none; }
 
 /* 💠 顶栏：沉稳、严谨的后台深灰色调 */
 .admin-header {
-  background-color: #2c3e50; 
+  background-color:rgba(86, 169, 252, 0.89); 
   color: white;
   line-height: 60px;
   display: flex;

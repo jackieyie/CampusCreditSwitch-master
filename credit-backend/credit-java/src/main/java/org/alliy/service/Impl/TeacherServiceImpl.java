@@ -1,33 +1,23 @@
-package org.alliy.service.Impl;
+package org.alliy.service.impl;
 
-import org.alliy.mapper.CourseMapper;
-import org.alliy.mapper.StudentMapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.alliy.mapper.TeacherMapper;
 import org.alliy.pojo.Teacher;
 import org.alliy.service.TeacherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
-public class TeacherServiceImpl implements TeacherService {
+public class TeacherServiceImpl extends ServiceImpl<TeacherMapper, Teacher> implements TeacherService {
 
     @Autowired
     private TeacherMapper teacherMapper;
-    @Autowired
-    private StudentMapper studentMapper;
-    @Autowired
-    private CourseMapper courseMapper;
 
-
+    /**
+     * 手写实现根据工号获取信息的方法
+     */
     @Override
-    public List<Teacher> getAllTeacher(){
-        List<Teacher> teachers = teacherMapper.selectList(null);
-        for (Teacher teacher : teachers) {
-            teacher.setCourses(courseMapper.selectByTeacherId(teacher.getId()));
-            teacher.setStudents(studentMapper.selectByTeacherId(teacher.getId()));
-        }
-        return teachers;
+    public Teacher selectByTid(Integer id) {
+        return teacherMapper.selectById(id);
     }
 }
