@@ -11,65 +11,89 @@ import java.util.*;
 @RequestMapping("/ai")
 public class AiController {
 
-    private final String COZE_API_URL = "https://api.coze.cn/v3/chat";
     private final String PAT = "Bearer pat_CIbvwX0C1VXgmfvkpThqoxcUNKdIdtHCja1GdC6MINaYJOxOkZJLScynH5qrBvx6";
     private final String BOT_ID = "7609964584581644338";
+    private final String COZE_API_URL = "https://api.coze.cn/v3/chat";
+    private final String RETRIEVE_URL = "https://api.coze.cn/v3/chat/retrieve";
+    private final String MESSAGE_LIST_URL = "https://api.coze.cn/v3/chat/message/list";
 
     @PostMapping("/chat")
     public Result chatWithAcademicAi(@RequestBody Map<String, Object> data) {
+        System.out.println("\n[1. 接收到学生咨询]: " + data.get("name"));
+
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", PAT);
 
-        // --- 数据极致压缩处理 ---
+        // 构造 Prompt 数据 (JSON 字符串化)
         String name = (String) data.get("name");
         List<Map<String, Object>> records = (List<Map<String, Object>>) data.get("record");
         String question = (String) data.get("question");
 
-        StringBuilder recordStr = new StringBuilder();
-        for (Map<String, Object> r : records) {
-            // 过滤掉 BLOB 详情等无关数据，仅提取：名，权重，分
-            recordStr.append("[").append(r.get("chineseName"))
-                    .append(", w=").append(r.get("weight"))
-                    .append(", s=").append(r.get("score"))
-                    .append("] ");
-        }
-
-        String finalPrompt = String.format(
-                "背景:学生[%s]。15门加权成绩清单: %s。在此基础上严谨分析回答(不要只给我建议问题): %s",
-                name, recordStr.toString(), question
-        );
-
-        // 构建请求体
+        // 构造请求体
         Map<String, Object> body = new HashMap<>();
         body.put("bot_id", BOT_ID);
-        body.put("user_id", "admin_" + data.get("id"));
+        body.put("user_id", "stu_" + data.get("id"));
         body.put("stream", false);
 
         List<Map<String, String>> messages = new ArrayList<>();
         Map<String, String> userMsg = new HashMap<>();
         userMsg.put("role", "user");
-        userMsg.put("content", finalPrompt);
+        userMsg.put("content", String.format("我是%s，我的成绩数据是：%s。我的问题是：%s", name, records, question));
         userMsg.put("content_type", "text");
         messages.add(userMsg);
         body.put("additional_messages", messages);
 
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-        Result r = new Result();
         try {
+            // 步骤1：发起 Chat
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
             ResponseEntity<Map> response = restTemplate.postForEntity(COZE_API_URL, entity, Map.class);
-            // 关键策略：强制后端缓冲 2 秒，确保同步接口拿到底层答案
-            Thread.sleep(2000);
+            Map chatInfo = (Map) ((Map) response.getBody()).get("data");
+            String chatId = (String) chatInfo.get("id");
+            String convId = (String) chatInfo.get("conversation_id");
 
-            r.setCode(200);
-            r.setData(response.getBody());
-            System.out.println("🤖 云端核心响应详情: " + response.getBody());
-            return r;
+            // 步骤2：轮询状态
+            String status = "in_progress";
+            int attempts = 0;
+            while ("in_progress".equals(status) && attempts < 25) {
+                Thread.sleep(1200);
+                String url = String.format("%s?chat_id=%s&conversation_id=%s", RETRIEVE_URL, chatId, convId);
+                ResponseEntity<Map> poll = restTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
+                status = (String) ((Map) poll.getBody().get("data")).get("status");
+                System.out.println("-> 状态检查: " + status);
+                attempts++;
+            }
+
+            // 步骤3：提取回答
+            if ("completed".equals(status)) {
+                String msgUrl = String.format("%s?chat_id=%s&conversation_id=%s", MESSAGE_LIST_URL, chatId, convId);
+                ResponseEntity<Map> msgResp = restTemplate.exchange(msgUrl, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
+                List<Map> msgList = (List<Map>) msgResp.getBody().get("data");
+
+                for (Map m : msgList) {
+                    if ("answer".equals(m.get("type"))) {
+                        String content = (String) m.get("content");
+                        System.out.println("[成功获取 AI 回复]");
+                        Result r = new Result();
+                        r.setCode(200);
+                        r.setData(content);
+                        return r;
+                    }
+                }
+            }
+
+            Result fail = new Result();
+            fail.setCode(500);
+            fail.setMsg("教授正在处理其他事务，请稍后再试。");
+            return fail;
+
         } catch (Exception e) {
-            r.setCode(500);
-            r.setMsg("对话接口繁忙，建议再次提交查询：" + e.getMessage());
-            return r;
+            e.printStackTrace();
+            Result err = new Result();
+            err.setCode(500);
+            err.setMsg("系统故障：" + e.getMessage());
+            return err;
         }
     }
 }

@@ -1,4 +1,4 @@
-package org.alliy.service.impl;
+package org.alliy.service.Impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.alliy.mapper.TeacherMapper;
