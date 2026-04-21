@@ -57,8 +57,7 @@
       <el-container>
         <!-- 行政色系顶栏 -->
         <el-header class="admin-header">
-          <img src="../../assets/logo1.png" style="width:230px; cursor: pointer; filter: brightness(0) invert(1);" @click="toIndex" /> 
-          
+          <img src="../../assets/logo1.png" style="width:230px; cursor: pointer;" @click="toIndex" /> 
           <div class="admin-meta">
             <el-dropdown>
               <span class="el-dropdown-link" style="color: white;">

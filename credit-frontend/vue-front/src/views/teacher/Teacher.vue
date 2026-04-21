@@ -44,7 +44,7 @@
 
       <el-container>
         <el-header class="blue-header">
-          <img src="../../assets/logo1.png" style="width:230px; cursor: pointer; filter: brightness(0) invert(1);" @click="toIndex" /> 
+          <img src="../../assets/logo1.png" style="width:230px; cursor: pointer;" @click="toIndex" /> 
           
           <div class="admin-info">
             <el-dropdown>
