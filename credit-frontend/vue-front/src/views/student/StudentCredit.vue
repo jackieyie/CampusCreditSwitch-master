@@ -44,7 +44,7 @@
 
     <!-- 🤖 AI 对话弹窗 -->
     <el-dialog 
-        title="资深学业导师在线指导" 
+        title="ai导师在线指导" 
         :visible.sync="showAiDialog" 
         width="600px"
         append-to-body

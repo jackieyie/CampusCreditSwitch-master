@@ -1,7 +1,7 @@
 <template>
   <div class="teacher-index">
     <el-container>
-      <!-- 侧边导航菜单：老师专属功能 -->
+      <!-- 侧边导航菜单 -->
       <el-aside width="200px">
         <el-col :span="24">
           <el-menu
@@ -10,17 +10,13 @@
             active-text-color="#ffd04b"
             style="font-weight: bold; background:url(http://zsjyc.ncst.edu.cn/tpl/1589185379807/images/bg.png) repeat-x;"
           >
-            <!-- 个人信息 -->
             <router-link to="/teacher/info">
               <el-menu-item index="1">
-                <template slot="">
-                  <i class="el-icon-user-solid"></i>
-                  <span>个人档案</span>
-                </template>
+                <i class="el-icon-user-solid"></i>
+                <span slot="title">个人档案</span>
               </el-menu-item>
             </router-link>
 
-            <!-- 审批管理：老师核心业务 -->
             <router-link to="/teacher/apply">
               <el-menu-item index="2">
                 <i class="el-icon-s-check"></i>
@@ -28,11 +24,18 @@
               </el-menu-item>
             </router-link>
 
-            <!-- 课程库维护/查看 -->
             <router-link to="/teacher/classes">
               <el-menu-item index="3">
                 <i class="el-icon-s-management"></i>
                 <span slot="title">课程管理</span>
+              </el-menu-item>
+            </router-link>
+
+            <!-- ✅ 新增：教务公告入口 -->
+            <router-link to="/teacher/notices">
+              <el-menu-item index="4">
+                <i class="el-icon-bell"></i>
+                <span slot="title">教务公告</span>
               </el-menu-item>
             </router-link>
           </el-menu>
@@ -40,7 +43,6 @@
       </el-aside>
 
       <el-container>
-        <!-- 保持为您指定的浅蓝色顶栏 -->
         <el-header class="blue-header">
           <img src="../../assets/logo1.png" style="width:230px; cursor: pointer; filter: brightness(0) invert(1);" @click="toIndex" /> 
           
@@ -57,7 +59,6 @@
           </div>
         </el-header>
 
-        <!-- 子页面容器 -->
         <el-main>
           <router-view />
         </el-main>
@@ -104,28 +105,17 @@ export default {
 </script>
 
 <style scoped>
-/* 🔑 修改背景逻辑：保持高度全屏，并引用和学生端一样的渐变背景图 */
 .teacher-index { 
   height: 100vh; 
   background: url('@/assets/嫩绿.jpg') no-repeat repeat-x;
   background-size: cover;
   z-index: 1000;
 }
-
 a { text-decoration: none; }
 .el-container { height: 100vh; }
-
-.admin-info {
-  width: auto;
-  float: right;
-  display: flex;
-  align-items: center;
-  padding-right: 30px;
-}
-
-/* 💠 保持您指定的颜色不变 */
+.admin-info { width: auto; float: right; display: flex; align-items: center; padding-right: 30px; }
 .blue-header {
-  background-color: rgb(119, 186, 246); /* 这是您刚刚指定的颜色 */
+  background-color: rgb(119, 186, 246);
   color: white;
   line-height: 60px;
   display: flex;
@@ -133,13 +123,8 @@ a { text-decoration: none; }
   align-items: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
-
 .el-dropdown-link { cursor: pointer; font-size: 15px; font-weight: bold; }
 .el-aside { height:100vh; border-right: 1px solid #e0e6ed; }
-.el-menu { height: 100vh; }
-
-/* 保证主显示区域是透明的，让背景透出来，如果不喜欢透明可以改为 background-color: #fff; */
-.el-main {
-  background-color: transparent;
-}
+.el-menu { height: 100vh; border: none; }
+.el-main { background-color: transparent; }
 </style>

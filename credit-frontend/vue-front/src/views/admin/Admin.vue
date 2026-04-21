@@ -34,11 +34,19 @@
               </el-menu-item>
             </router-link>
 
-            <!-- 4. 用户中心：找回的角色及身份修改功能 -->
+            <!-- 4. 用户中心：角色及身份修改功能 -->
             <router-link to="/admin/users-mgr">
               <el-menu-item index="4">
                 <i class="el-icon-key"></i>
                 <span slot="title">用户管理</span>
+              </el-menu-item>
+            </router-link>
+
+            <!-- ✅ 5. 新增：公告管理功能 -->
+            <router-link to="/admin/notices">
+              <el-menu-item index="5">
+                <i class="el-icon-bell"></i>
+                <span slot="title">公告发布</span>
               </el-menu-item>
             </router-link>
             
@@ -47,7 +55,7 @@
       </el-aside>
 
       <el-container>
-        <!-- 行政色系顶栏：颜色根据您的偏好设为藏青/灰蓝 -->
+        <!-- 行政色系顶栏 -->
         <el-header class="admin-header">
           <img src="../../assets/logo1.png" style="width:230px; cursor: pointer; filter: brightness(0) invert(1);" @click="toIndex" /> 
           
@@ -64,7 +72,7 @@
           </div>
         </el-header>
 
-        <!-- 管理员具体子页显示区 (AdminInfo / AdminCourses / AdminUsers / CourseContainer) -->
+        <!-- 管理员具体子页显示区 -->
         <el-main class="transparent-main">
           <router-view />
         </el-main>
@@ -91,7 +99,6 @@ export default {
           cancelButtonText: '取消',
           type: 'warning' 
       }).then(() => {
-        // 清理身份数据，保障账户安全
         localStorage.clear();
         this.$router.push('/login');
         this.$message.success("安全退出成功");
@@ -102,7 +109,6 @@ export default {
 </script>
 
 <style scoped>
-/* 🔑 背景设计：保持与学生端完全一致的“嫩绿渐变”风格 */
 .admin-wrapper { 
   height: 100vh; 
   background: url('@/assets/嫩绿.jpg') no-repeat repeat-x;
@@ -110,10 +116,8 @@ export default {
   z-index: 1000;
   overflow: hidden;
 }
-
 a { text-decoration: none; }
 .el-container { height: 100vh; }
-
 .admin-meta {
   width: auto;
   float: right;
@@ -121,8 +125,6 @@ a { text-decoration: none; }
   align-items: center;
   padding-right: 30px;
 }
-
-/* 💠 顶栏：沉稳、严谨的后台深灰色调 */
 .admin-header {
   background-color:rgba(86, 169, 252, 0.89); 
   color: white;
@@ -132,12 +134,9 @@ a { text-decoration: none; }
   align-items: center;
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
-
 .el-dropdown-link { cursor: pointer; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; }
 .el-aside { height:100vh; background-color: white; border-right: 1px solid #dcdfe6;}
 .el-menu { height: 100vh; border: none; }
-
-/* 保证内容区是透明的，让精美的渐变底色透出来 */
 .transparent-main {
   background-color: transparent;
 }

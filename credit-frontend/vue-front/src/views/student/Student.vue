@@ -1,7 +1,7 @@
 <template>
   <div class="index">
     <el-container>
-      <!-- 侧边导航菜单保持原有风格 -->
+      <!-- 侧边导航菜单 -->
       <el-aside width="200px">
         <el-col :span="24">
           <el-menu
@@ -46,14 +46,22 @@
                 <span slot="title">提交申请</span>
               </el-menu-item>
             </router-link>
+
+            <!-- ✅ 新增：教务公告入口 -->
+            <router-link to="/student/notices">
+              <el-menu-item index="6">
+                <i class="el-icon-bell"></i>
+                <span slot="title">教务公告</span>
+              </el-menu-item>
+            </router-link>
           </el-menu>
         </el-col>
       </el-aside>
 
       <el-container>
-        <!-- 【核心修改】：上边栏 Header 改为蓝色 -->
+        <!-- 蓝色顶栏 -->
         <el-header class="blue-header">
-          <img src="../../assets/logo1.png" style="width:230px; cursor: pointer; filter: brightness(0) invert(1);" @click="toIndex" /> 
+          <img src="../../assets/logo1.png" style="width:230px; cursor: pointer;" @click="toIndex" /> 
           
           <div class="admin">
             <el-dropdown>
@@ -110,48 +118,25 @@ export default {
   background:url('@/assets/嫩绿.jpg') no-repeat repeat-x;
   background-size: cover;
   z-index:1000;
+  height: 100vh;
 }
 a { text-decoration: none; }
-.index { height: 100vh; }
 .el-container { height: 100vh; }
-
-.admin {
-  width: auto;
-  float: right;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-right: 20px;
-}
-
-/* 【样式修改】定义蓝色顶栏 */
+.admin { width: auto; float: right; display: flex; align-items: center; justify-content: flex-end; padding-right: 20px; }
 .el-header.blue-header {
-  background-color:rgb(119, 186, 246); /* 这里是专业的学术蓝 */
+  background-color:rgb(119, 186, 246);
   color: white;
   text-align: center;
   line-height: 60px;
-  border-bottom: 1px solidrgb(107, 167, 235); /* 深一点的边框，更有质感 */
+  border-bottom: 1px solid rgb(107, 167, 235);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 添加轻微阴影，更具立体感 */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-
-/* 强制让下拉链接变成白色 */
-.el-dropdown-link {
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: bold;
-}
-
+.el-dropdown-link { cursor: pointer; font-size: 16px; font-weight: bold; }
 .el-aside { height:100vh; }
-.el-menu { height: 100vh; }
-
-/* 增强Logo对比度，使其在蓝色背景上更清晰 */
-img {
-    transition: transform 0.3s;
-}
-img:hover {
-    transform: scale(1.05);
-}
+.el-menu { height: 100vh; border: none; }
+img { transition: transform 0.3s; }
+img:hover { transform: scale(1.05); }
 </style>

@@ -5,9 +5,9 @@ import ElementUI from 'element-ui'
 Vue.use(VueRouter)
 
 /**
- * 💡 提示：
- * Admin/AdminInfo/AdminCourses 等文件位于 views/admin/ 下
- * CourseContainer 现在位于 views/ 目录下 (公用)
+ * 💡 路由架构说明：
+ * 1. AdminNotices.vue: 管理员发布和删除公告的后台页面
+ * 2. ViewNotices.vue: 学生和教师查看公告列表的展示页面
  */
 const routes = [
   // --- 开放入口模块 ---
@@ -48,7 +48,13 @@ const routes = [
         component: () => import("../views/admin/AdminUsers.vue"),
         meta: { role: 'admin' }
       },
-      // ✅ 共享组件入口：管理员查看全库视角
+      // ✅ 管理员专供：公告发布与管理
+      {
+        path: 'notices',
+        name: 'AdminNotices',
+        component: () => import("../views/admin/AdminNotices.vue"),
+        meta: { role: 'admin' }
+      },
       {
         path: 'container', 
         name: 'AdminGlobalContainer',
@@ -84,7 +90,13 @@ const routes = [
         component: () => import("../views/teacher/TeacherClasses.vue"),
         meta: { role: 'teacher' }
       },
-      // ✅ 共享组件入口：教师查看授课比对视角
+      // ✅ 教师端：教务公告查阅
+      {
+        path: 'notices',
+        name: 'TeacherNotices',
+        component: () => import("../views/ViewNotices.vue"),
+        meta: { role: 'teacher' }
+      },
       {
         path: 'container',
         name: 'TeacherGlobalContainer',
@@ -126,8 +138,13 @@ const routes = [
         component: () => import("../views/student/StudentApply.vue"),
         meta: { role: 'student' }
       },
-      // ✅ 共享组件入口：学生进行选课修读视角
-      // 注意此处路径现在统一指向了 ../views/CourseContainer.vue
+      // ✅ 学生端：教务公告查阅
+      {
+        path: 'notices',
+        name: 'StudentNotices',
+        component: () => import("../views/ViewNotices.vue"),
+        meta: { role: 'student' }
+      },
       {
         path: 'container',
         name: 'CourseContainer',
@@ -157,33 +174,27 @@ const router = new VueRouter({
 })
 
 /**
- * 🔐 加固版权限守卫：解决空白页、角色漂移及空格/大小写匹配问题
+ * 🔐 加固版权限守卫
  */
 router.beforeEach((to, from, next) => {
-  // 1. 获取登录状态，强制校验合法性
   const userRole = localStorage.getItem("userRole");
 
-  // 2. 动页修改标题，提升体验
   if (to.path.includes('/admin')) document.title = '控制台-管理端';
   else if (to.path.includes('/teacher')) document.title = '工作台-教务端';
   else if (to.path.includes('/student')) document.title = '档案中心-学生端';
   else document.title = '学分认证管理系统';
 
-  // 3. 拦截检查
   const roleRequired = to.matched.find(record => record.meta && record.meta.role)?.meta.role;
 
   if (roleRequired) {
-    // 处理未登录情况
     if (!userRole || userRole === 'null') {
       ElementUI.Message.warning("权限不足：请登录授权账号后继续");
       return next('/login');
     }
 
-    // 执行强类型一致化匹配 (防空格，防大写)
     const normalizedUser = userRole.toString().trim().toLowerCase();
     const normalizedTarget = roleRequired.toString().trim().toLowerCase();
 
-    // 如果拥有管理权限(admin)可进入所有页面；如果是目标角色放行
     if (normalizedUser === 'admin' || normalizedUser === normalizedTarget) {
       next();
     } else {
@@ -191,7 +202,6 @@ router.beforeEach((to, from, next) => {
       next('/'); 
     }
   } else {
-    // 基础公共页面不设卡
     next();
   }
 })
